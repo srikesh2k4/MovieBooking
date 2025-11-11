@@ -207,7 +207,7 @@ export default function Admin() {
             Admin Login
           </h3>
           <p className="text-xs text-center text-gray-500 mb-6">
-            Use: <code className="bg-gray-100 px-1.5 py-0.5 rounded">admin</code> / <code className="bg-gray-100 px-1.5 py-0.5 rounded">admin123</code>
+            Use: <code className="bg-gray-700 px-1.5 py-0.5 rounded text-white">admin</code> / <code className="bg-gray-100 px-1.5 py-0.5 rounded">admin123</code>
           </p>
           <form onSubmit={login} className="space-y-5">
             <label className="block">
@@ -217,7 +217,7 @@ export default function Admin() {
                 defaultValue="admin"
                 required
                 placeholder="Enter admin username"
-                className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition placeholder:text-gray-700"
+                className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition placeholder:text-gray-700 text-black"
               />
             </label>
             <label className="block">
@@ -228,7 +228,7 @@ export default function Admin() {
                 defaultValue="admin123"
                 required
                 placeholder="Enter admin password"
-                className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition placeholder:text-gray-700"
+                className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition placeholder:text-gray-700 text-black"
               />
             </label>
             <button className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold transition-all shadow-md">
@@ -258,14 +258,14 @@ export default function Admin() {
             <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-500">
               <h3 className="text-lg font-bold text-red-600 mb-3">Add New Movie</h3>
               <p className="text-xs text-gray-500 mb-4">
-                Upload <strong>poster</strong>: JPG only(Max 2MB)
+                Upload <strong>poster</strong>: JPG, PNG, WEBP (Max 2MB)
               </p>
               <form onSubmit={addMovie} encType="multipart/form-data" className="space-y-4">
-                <input name="title" placeholder="e.g. Jawan, Animal" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <input name="duration" placeholder="e.g. 2h 50m" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <input name="language" placeholder="e.g. Hindi, Tamil" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <input name="certificate" placeholder="e.g. U/A, A" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <textarea name="description" placeholder="Short description (optional)" rows="2" className="w-full p-3 border rounded-lg text-sm resize-none placeholder:text-gray-700"></textarea>
+                <input name="title" placeholder="e.g. Jawan, Animal" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <input name="duration" placeholder="e.g. 2h 50m" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <input name="language" placeholder="e.g. Hindi, Tamil" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <input name="certificate" placeholder="e.g. U/A, A" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <textarea name="description" placeholder="Short description (optional)" rows="2" className="w-full p-3 border rounded-lg text-sm resize-none placeholder:text-gray-700 text-black"></textarea>
                 <div>
                   <p className="text-xs font-medium text-gray-600 mb-1">Poster Image</p>
                   <input type="file" name="poster" accept="image/jpeg,image/png,image/webp" required className="w-full p-2 border rounded-lg text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-red-600 file:text-white file:text-xs" />
@@ -286,9 +286,9 @@ export default function Admin() {
             <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-500">
               <h3 className="text-lg font-bold text-red-600 mb-3">Add New Cinema</h3>
               <form onSubmit={addCinema} className="space-y-4">
-                <input name="name" placeholder="e.g. PVR Phoenix Mall" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <input name="city" placeholder="e.g. Mumbai" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <textarea name="address" placeholder="Full address with pincode" rows="2" className="w-full p-3 border rounded-lg text-sm resize-none placeholder:text-gray-700"></textarea>
+                <input name="name" placeholder="e.g. PVR Phoenix Mall" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <input name="city" placeholder="e.g. Mumbai" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <textarea name="address" placeholder="Full address with pincode" rows="2" className="w-full p-3 border rounded-lg text-sm resize-none placeholder:text-gray-700 text-black"></textarea>
                 <button className="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-medium text-sm transition-all shadow">
                   Add Cinema
                 </button>
@@ -305,15 +305,15 @@ export default function Admin() {
                     <option key={c.id} value={c.id}>{c.name} – {c.city}</option>
                   ))}
                 </select>
-                <input name="name" placeholder="e.g. Audi 2" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
+                <input name="name" placeholder="e.g. Audi 2" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
                 <div className="grid grid-cols-2 gap-3">
-                  <input type="number" name="rows" defaultValue="6" min="1" required placeholder="Rows" className="p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                  <input type="number" name="cols" defaultValue="12" min="1" required placeholder="Columns" className="p-3 border rounded-lg text-sm placeholder:text-gray-700" />
+                  <input type="number" name="rows" defaultValue="6" min="1" required placeholder="Rows" className="p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                  <input type="number" name="cols" defaultValue="12" min="1" required placeholder="Columns" className="p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
                 </div>
-                <input name="aisles" placeholder="Aisle cols e.g. 6" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <input name="premiumRows" placeholder="Premium e.g. E,F" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <input name="reclinerRows" placeholder="Recliner e.g. A,B" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <input name="disabledSeats" placeholder="Disabled e.g. A1,F6" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
+                <input name="aisles" placeholder="Aisle cols e.g. 6" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <input name="premiumRows" placeholder="Premium e.g. E,F" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <input name="reclinerRows" placeholder="Recliner e.g. A,B" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <input name="disabledSeats" placeholder="Disabled e.g. A1,F6" className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
                 <button className="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-medium text-sm transition-all shadow">
                   Add Screen
                 </button>
@@ -336,9 +336,9 @@ export default function Admin() {
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
-                <input type="date" name="show_date" required min={new Date().toISOString().split("T")[0]} className="w-full p-3 border rounded-lg text-sm" />
-                <input name="show_time" placeholder="e.g. 06:30 PM" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <input type="number" name="price" defaultValue="180" min="50" placeholder="Price in ₹" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
+                <input type="date" name="show_date" required min={new Date().toISOString().split("T")[0]} className="w-full p-3 border rounded-lg text-sm text-black" />
+                <input name="show_time" placeholder="e.g. 06:30 PM" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <input type="number" name="price" defaultValue="180" min="50" placeholder="Price in ₹" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
                 <button className="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-medium text-sm transition-all shadow">
                   Create Show
                 </button>
@@ -352,8 +352,8 @@ export default function Admin() {
                 <strong>Image:</strong> JPG, PNG, WEBP (1920×600 recommended, Max 2MB)
               </p>
               <form onSubmit={addBanner} encType="multipart/form-data" className="space-y-4">
-                <input name="title" placeholder="e.g. Now Showing: Jawan" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700" />
-                <textarea name="description" placeholder="Subtitle (optional)" rows="2" className="w-full p-3 border rounded-lg text-sm resize-none placeholder:text-gray-700"></textarea>
+                <input name="title" placeholder="e.g. Now Showing: Jawan" required className="w-full p-3 border rounded-lg text-sm placeholder:text-gray-700 text-black" />
+                <textarea name="description" placeholder="Subtitle (optional)" rows="2" className="w-full p-3 border rounded-lg text-sm resize-none placeholder:text-gray-700 text-black"></textarea>
                 <select name="movie_id" required className="w-full p-3 border rounded-lg text-sm">
                   <option value="">Link to Movie</option>
                   {movies.map(m => (
