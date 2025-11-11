@@ -1,19 +1,22 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import jwtDecode from "jwt-decode";
+import { api, setAuth } from "./api"; // ✅ ensures API calls include token
 
+// Create context
 const AuthContext = createContext();
 
-// ✅ Provider to wrap around your app (in main.jsx)
+// ✅ Provider component
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
-  // --- Restore user on refresh or reload ---
+  // --- Restore user session on refresh ---
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const decoded = jwtDecode(token);
         if (decoded && decoded.exp * 1000 > Date.now()) {
+          setAuth(token); // attach token to axios
           setUser({
             id: decoded.sub,
             name: decoded.name || decoded.username || "User",
@@ -22,10 +25,11 @@ export function AuthProvider({ children }) {
             token,
           });
         } else {
-          localStorage.removeItem("token"); // expired
+          console.warn("Token expired — logging out");
+          localStorage.removeItem("token");
         }
       } catch (err) {
-        console.error("Invalid token:", err);
+        console.error("Invalid token on restore:", err);
         localStorage.removeItem("token");
       }
     }
@@ -37,6 +41,7 @@ export function AuthProvider({ children }) {
     try {
       const decoded = jwtDecode(token);
       localStorage.setItem("token", token);
+      setAuth(token); // ✅ makes API auto-authenticated
       setUser({
         id: decoded.sub,
         name: decoded.name || decoded.username || "User",
@@ -52,10 +57,11 @@ export function AuthProvider({ children }) {
   // --- Logout ---
   const logout = () => {
     localStorage.removeItem("token");
+    setAuth(null); // remove from axios
     setUser(null);
   };
 
-  // --- Listen for login/logout changes across tabs ---
+  // --- Sync login/logout across tabs ---
   useEffect(() => {
     const syncAuth = (e) => {
       if (e.key === "token") {
@@ -78,5 +84,5 @@ export function AuthProvider({ children }) {
   );
 }
 
-// --- Hook for use in components ---
+// --- Hook for components ---
 export const useAuth = () => useContext(AuthContext);

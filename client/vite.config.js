@@ -10,9 +10,21 @@ export default defineConfig({
   server: {
     port: 5173, // Frontend runs here
     proxy: {
-      "/api": "http://localhost:4000", // Express API (backend)
-      "/socket.io": { target: "http://localhost:4000", ws: true }, // WebSocket proxy
-      "/public": "http://localhost:4000", // serve PDFs, posters, etc.
+      "/api": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/public": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/socket.io": {
+        target: "http://localhost:4000",
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
 });

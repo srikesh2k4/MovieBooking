@@ -74,14 +74,14 @@ export default function Nav() {
 
   // --- Search submit / enter ---
   function doSearch() {
-    if (suggestions.length === 1) {
-      navigate(`/movie/${suggestions[0].id}`);
-    } else if (suggestions.length > 1) {
-      // optional: you could navigate to a search results page
-      alert(`Found ${suggestions.length} similar movies!`);
-    } else {
-      alert("No matching movie found.");
-    }
+if (suggestions.length) {
+  navigate(`/movie/${suggestions[0].id}`);
+  setQuery("");
+  setSuggestions([]);
+} else {
+  alert("No matching movie found.");
+}
+
   }
 
   function logout() {

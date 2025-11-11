@@ -48,13 +48,20 @@ const [m, c, s, b] = await Promise.all([
   }
 
   // ---------- RESTORE SESSION ----------
-  useEffect(() => {
-    const t = localStorage.getItem("admin_token");
-    if (t) setToken(t);
-  }, []);
-  useEffect(() => {
-    if (token) loadData(token);
-  }, [token]);
+// Restore session
+useEffect(() => {
+  const saved = localStorage.getItem("admin_token");
+  if (saved) {
+    setToken(saved);
+    loadData(saved); // immediately load after restoring
+  }
+}, []);
+
+// When token changes, save to localStorage
+useEffect(() => {
+  if (token) localStorage.setItem("admin_token", token);
+}, [token]);
+
 
   // ---------- ADD MOVIE ----------
   async function addMovie(e) {
@@ -122,7 +129,7 @@ const [m, c, s, b] = await Promise.all([
     d.layout_json = JSON.stringify(layout);
 
     try {
-      const r = await api.post("/api/admin/screens", d, {
+      const r = await api.post("/api/screens", d, {
         headers: { Authorization: "Bearer " + token },
       });
       if (r.data.id) {
@@ -185,7 +192,7 @@ const [m, c, s, b] = await Promise.all([
       alert(err.response?.data?.error || "Delete failed");
     }
   }
-  // ---------- DELETE MOVIE ----------
+// ---------- DELETE MOVIE ----------
 async function deleteMovie(id) {
   if (!window.confirm("Are you sure you want to delete this movie?")) return;
   try {
@@ -198,7 +205,6 @@ async function deleteMovie(id) {
     alert(err.response?.data?.error || "Failed to delete movie");
   }
 }
-
 
   // ---------- LOGOUT ----------
   function logout() {

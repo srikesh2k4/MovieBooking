@@ -89,7 +89,6 @@ db.all(`PRAGMA table_info(bookings)`, [], (err, cols) => {
 
 });
 
-// --- Auth Helpers ---
 function authAdmin(req, res, next) {
   const token = (req.headers.authorization || "").replace("Bearer ", "");
   if (!token) return res.status(401).json({ error: "Missing token" });
@@ -98,10 +97,11 @@ function authAdmin(req, res, next) {
     if (p.role !== "admin") throw new Error("not admin");
     req.user = p;
     next();
-  } catch {
+  } catch (err) {
     return res.status(401).json({ error: "Invalid token" });
   }
 }
+
 function authUser(req, res, next) {
   const token = (req.headers.authorization || "").replace("Bearer ", "");
   if (!token) return res.status(401).json({ error: "Missing token" });
@@ -198,6 +198,23 @@ app.post("/api/admin/movies", authAdmin, upload.single("poster"), (req, res) => 
     }
   );
 });
+// ✅ Get all booked seats across all shows for a movie
+app.get("/api/movies/:id/booked-seats", (req, res) => {
+  const movieId = req.params.id;
+
+  db.all(
+    `SELECT s.id AS show_id, ss.seat_code, ss.status
+     FROM show_seats ss
+     JOIN shows s ON ss.show_id = s.id
+     WHERE s.movie_id=? AND ss.status='sold'`,
+    [movieId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
 
 
 app.post("/api/admin/shows", authAdmin, (req, res) => {
@@ -228,6 +245,7 @@ app.post("/api/admin/shows", authAdmin, (req, res) => {
     );
   });
 });
+// ✅ Admin-only Screens
 app.get("/api/screens", (_req, res) => {
   db.all(
     `SELECT s.*, c.name AS cinema_name, c.city AS cinema_city
@@ -237,6 +255,28 @@ app.get("/api/screens", (_req, res) => {
     (_e, rows) => res.json(rows || [])
   );
 });
+
+
+// ✅ Add Screen (Admin only)
+app.post("/api/screens", authAdmin, (req, res) => {
+  const { cinema_id, name, rows, cols, layout_json } = req.body;
+
+  if (!cinema_id || !name)
+    return res.status(400).json({ error: "Missing cinema_id or name" });
+
+  const id = nanoid(8);
+  db.run(
+    "INSERT INTO screens (id, cinema_id, name, rows, cols, layout_json) VALUES (?, ?, ?, ?, ?, ?)",
+    [id, cinema_id, name, rows || 0, cols || 0, layout_json || "{}"],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id });
+    }
+  );
+});
+
+
+
 
 
 app.get("/api/shows", (req, res) => {
@@ -426,43 +466,118 @@ app.get("/api/my/bookings", authUser, (req, res) => {
   );
 });
 
-// ✅ DELETE MOVIE (Admin Only)
-// ✅ DELETE MOVIE (with dependencies)
 app.delete("/api/admin/movies/:id", authAdmin, (req, res) => {
-  const movieId = req.params.id;
+  try {
+    const movieId = req.params.id;
 
-  db.serialize(() => {
-    // 1️⃣ Delete dependent banners
-    db.run("DELETE FROM banners WHERE movie_id=?", [movieId]);
+    db.serialize(() => {
+      db.all("SELECT id FROM shows WHERE movie_id=?", [movieId], (err, shows) => {
+        if (err) {
+          console.error("❌ DB fetch failed:", err.message);
+          return res.status(500).json({ error: err.message });
+        }
 
-    // 2️⃣ Delete dependent bookings
-    db.run("DELETE FROM bookings WHERE movie_id=?", [movieId]);
+        const showIds = shows.map((s) => s.id);
 
-    // 3️⃣ Delete dependent shows
-    db.run("DELETE FROM shows WHERE movie_id=?", [movieId]);
+        // Safely delete related records
+        if (showIds.length > 0) {
+          const placeholders = showIds.map(() => "?").join(",");
+          db.run(`DELETE FROM show_seats WHERE show_id IN (${placeholders})`, showIds, (seatErr) => {
+            if (seatErr) console.warn("⚠️ show_seats delete issue:", seatErr.message);
+          });
+        }
 
-    // 4️⃣ Delete movie poster file if exists
-    db.get("SELECT poster FROM movies WHERE id=?", [movieId], (err, row) => {
-      if (row && row.poster) {
-        try {
-          const posterPath = path.join(
-            __dirname,
-            row.poster.replace(/^\/public\//, "public/")
-          );
-          if (fs.existsSync(posterPath)) fs.unlinkSync(posterPath);
-        } catch {}
-      }
+        db.run("DELETE FROM bookings WHERE movie_id=?", [movieId]);
+        db.run("DELETE FROM shows WHERE movie_id=?", [movieId]);
+        db.run("DELETE FROM banners WHERE movie_id=?", [movieId]);
+
+        db.get("SELECT poster FROM movies WHERE id=?", [movieId], (err2, row) => {
+          if (row && row.poster) {
+            try {
+              const posterPath = path.join(__dirname, row.poster.replace(/^\/public\//, "public/"));
+              if (fs.existsSync(posterPath)) fs.unlinkSync(posterPath);
+            } catch (fsErr) {
+              console.warn("⚠️ Poster delete failed:", fsErr.message);
+            }
+          }
+
+          db.run("DELETE FROM movies WHERE id=?", [movieId], function (err3) {
+            if (err3) {
+              console.error("❌ Final delete failed:", err3.message);
+              return res.status(500).json({ error: err3.message });
+            }
+            if (this.changes === 0)
+              return res.status(404).json({ error: "Movie not found" });
+            res.json({ success: true });
+          });
+        });
+      });
     });
+  } catch (e) {
+    console.error("💥 Server crash prevented:", e.message);
+    res.status(500).json({ error: "Unexpected server error" });
+  }
+});
 
-    // 5️⃣ Finally delete the movie itself
-    db.run("DELETE FROM movies WHERE id=?", [movieId], function (err2) {
+
+
+
+// --- 🖼️ ADD BANNER (Admin Only, Safe) ---
+app.post("/api/admin/banners", authAdmin, upload.single("image"), (req, res) => {
+  try {
+    const { title, description, movie_id } = req.body;
+    if (!req.file) return res.status(400).json({ error: "No image uploaded" });
+
+    const id = nanoid(8);
+    const ext = path.extname(req.file.originalname) || ".jpg";
+    const newName = id + ext;
+
+    const newPath = path.join(bannerDir, newName);
+    fs.rename(req.file.path, newPath, (err) => {
+      if (err) return res.status(500).json({ error: "File move failed: " + err.message });
+
+      const imagePath = `/public/assets/banners/${newName}`;
+
+      db.run(
+        "INSERT INTO banners (id, title, description, image, movie_id) VALUES (?,?,?,?,?)",
+        [id, title || "", description || "", imagePath, movie_id || null],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.json({ id, image: imagePath });
+        }
+      );
+    });
+  } catch (err) {
+    console.error("Banner add crash:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// --- 🗑️ DELETE BANNER (Admin Only, Safe) ---
+// --- 🗑️ DELETE BANNER (Admin Only) ---
+app.delete("/api/admin/banners/:id", authAdmin, (req, res) => {
+  const id = req.params.id;
+  db.get("SELECT image FROM banners WHERE id=?", [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Banner not found" });
+
+    // Safely delete image if exists
+    if (row.image) {
+      try {
+        const bannerPath = path.join(__dirname, row.image.replace(/^\/public\//, "public/"));
+        if (fs.existsSync(bannerPath)) fs.unlinkSync(bannerPath);
+      } catch (fsErr) {
+        console.warn("⚠️ Banner image delete failed:", fsErr.message);
+      }
+    }
+
+    db.run("DELETE FROM banners WHERE id=?", [id], (err2) => {
       if (err2) return res.status(500).json({ error: err2.message });
-      if (this.changes === 0)
-        return res.status(404).json({ error: "Movie not found" });
       res.json({ success: true });
     });
   });
 });
+
 
 
 
