@@ -1,3 +1,4 @@
+// src/components/Login.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { api, setAuth } from "../api";
@@ -17,8 +18,14 @@ export default function Login() {
         localStorage.setItem("token", r.data.token);
         setAuth(r.data.token);
         login(r.data.token);
+        
+        // TRIGGER NAV TO REFRESH USER
+        window.dispatchEvent(new Event("storage"));
+
         navigate("/");
-      } else alert("Login failed.");
+      } else {
+        alert("Login failed.");
+      }
     } catch (err) {
       alert(err.response?.data?.error || "Login failed");
     }
@@ -34,8 +41,14 @@ export default function Login() {
         localStorage.setItem("token", r.data.token);
         setAuth(r.data.token);
         login(r.data.token);
+        
+        // TRIGGER NAV TO REFRESH USER
+        window.dispatchEvent(new Event("storage"));
+
         navigate("/");
-      } else alert("Registration failed.");
+      } else {
+        alert("Registration failed.");
+      }
     } catch (err) {
       alert(err.response?.data?.error || "Registration failed");
     }
@@ -44,7 +57,6 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-white px-4 py-10">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 md:p-10 relative overflow-hidden border border-gray-100">
-        {/* HEADER */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800">
             Welcome to{" "}
@@ -56,14 +68,10 @@ export default function Login() {
         </div>
 
         {/* LOGIN FORM */}
-        <form
-          onSubmit={onLogin}
-          className="space-y-4 border-t border-gray-200 pt-5"
-        >
+        <form onSubmit={onLogin} className="space-y-4 border-t border-gray-200 pt-5">
           <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            🔑 User Login
+            User Login
           </h3>
-
           <label className="block">
             <span className="text-sm text-gray-600">Email</span>
             <input
@@ -73,7 +81,6 @@ export default function Login() {
               className="mt-1 w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-red-500 focus:outline-none transition"
             />
           </label>
-
           <label className="block">
             <span className="text-sm text-gray-600">Password</span>
             <input
@@ -83,7 +90,6 @@ export default function Login() {
               className="mt-1 w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-red-500 focus:outline-none transition"
             />
           </label>
-
           <button
             type="submit"
             className="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-md font-medium transition-transform transform hover:scale-[1.02] shadow-md"
@@ -93,14 +99,10 @@ export default function Login() {
         </form>
 
         {/* REGISTER FORM */}
-        <form
-          onSubmit={onRegister}
-          className="space-y-4 border-t border-gray-200 pt-6 mt-6"
-        >
+        <form onSubmit={onRegister} className="space-y-4 border-t border-gray-200 pt-6 mt-6">
           <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            🆕 Register
+            Register
           </h3>
-
           <label className="block">
             <span className="text-sm text-gray-600">Full Name</span>
             <input
@@ -109,7 +111,6 @@ export default function Login() {
               className="mt-1 w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-red-500 focus:outline-none transition"
             />
           </label>
-
           <label className="block">
             <span className="text-sm text-gray-600">Email</span>
             <input
@@ -119,7 +120,6 @@ export default function Login() {
               className="mt-1 w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-red-500 focus:outline-none transition"
             />
           </label>
-
           <label className="block">
             <span className="text-sm text-gray-600">Password</span>
             <input
@@ -129,7 +129,6 @@ export default function Login() {
               className="mt-1 w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-red-500 focus:outline-none transition"
             />
           </label>
-
           <button
             type="submit"
             className="w-full bg-gray-800 hover:bg-gray-900 text-white py-2.5 rounded-md font-medium transition-transform transform hover:scale-[1.02] shadow-md"
@@ -138,14 +137,11 @@ export default function Login() {
           </button>
         </form>
 
-        {/* FOOTER NOTE */}
         <p className="text-xs text-gray-400 text-center mt-8 leading-relaxed">
           By continuing, you agree to{" "}
           <span className="text-red-600 font-medium">BookMyShow’s Terms of Service</span> and{" "}
           <span className="text-red-600 font-medium">Privacy Policy</span>.
         </p>
-
-        {/* Decorative red line */}
         <div className="absolute top-0 left-0 w-full h-1 bg-red-600"></div>
       </div>
     </div>

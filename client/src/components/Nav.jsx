@@ -1,3 +1,4 @@
+// src/components/Nav.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { api, setAuth } from "../api";
@@ -11,7 +12,7 @@ export default function Nav() {
   const searchRef = useRef(null);
   const navigate = useNavigate();
 
-  // --- Fetch user ---
+  // FETCH USER FROM /api/me
   async function fetchUser() {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -22,21 +23,30 @@ export default function Nav() {
     setAuth(token);
     try {
       const r = await api.get("/api/me");
-      setUser(r.data?.name ? r.data : null);
-    } catch {
+      const data = r.data;
+      if (data?.id && data?.name) {
+        setUser(data);
+      } else {
+        throw new Error("Invalid user data");
+      }
+    } catch (err) {
+      console.warn("Failed to fetch user:", err);
       setUser(null);
       localStorage.removeItem("token");
+      setAuth(null);
     }
   }
 
+  // ON MOUNT + STORAGE CHANGE
   useEffect(() => {
     fetchUser();
-    const onStorage = () => fetchUser();
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+
+    const handleStorage = () => fetchUser();
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  // --- Load all movies once ---
+  // LOAD MOVIES ONCE
   useEffect(() => {
     (async () => {
       try {
@@ -48,40 +58,39 @@ export default function Nav() {
     })();
   }, []);
 
-  // --- Update suggestions live ---
+  // LIVE SEARCH SUGGESTIONS
   useEffect(() => {
     if (!query.trim()) {
       setSuggestions([]);
       return;
     }
     const q = query.toLowerCase();
-    const filtered = allMovies.filter((m) =>
-      (m.title || "").toLowerCase().includes(q)
-    );
-    setSuggestions(filtered.slice(0, 6)); // show top 6 matches
+    const filtered = allMovies
+      .filter((m) => (m.title || "").toLowerCase().includes(q))
+      .slice(0, 6);
+    setSuggestions(filtered);
   }, [query, allMovies]);
 
-  // --- Handle outside click to close suggestions ---
+  // CLOSE SUGGESTIONS ON OUTSIDE CLICK
   useEffect(() => {
-    function handleClickOutside(e) {
+    const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setSuggestions([]);
       }
-    }
+    };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // --- Search submit / enter ---
+  // SEARCH ON ENTER OR CLICK
   function doSearch() {
-if (suggestions.length) {
-  navigate(`/movie/${suggestions[0].id}`);
-  setQuery("");
-  setSuggestions([]);
-} else {
-  alert("No matching movie found.");
-}
-
+    if (suggestions.length > 0) {
+      navigate(`/movie/${suggestions[0].id}`);
+      setQuery("");
+      setSuggestions([]);
+    } else if (query.trim()) {
+      alert("No matching movie found.");
+    }
   }
 
   function logout() {
@@ -106,7 +115,7 @@ if (suggestions.length) {
 
         {/* DESKTOP SEARCH */}
         <div className="hidden md:block relative" ref={searchRef}>
-          <div className="w-[420px] flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-red-600 relative">
+          <div className="w-[420px] flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-red-600">
             <svg
               width="18"
               height="18"
@@ -116,10 +125,7 @@ if (suggestions.length) {
             >
               <path
                 fill="currentColor"
-                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 
-                6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79l5 
-                5l1.5-1.5l-5-5zm-6 0C7.01 14 5 11.99 5 
-                9.5S7.01 5 9.5 5S14 7.01 14 9.5S11.99 14 9.5 14"
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79l5 5l1.5-1.5l-5-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5S14 7.01 14 9.5S11.99 14 9.5 14"
               />
             </svg>
             <input
@@ -131,7 +137,7 @@ if (suggestions.length) {
             />
           </div>
 
-          {/* Suggestions Dropdown */}
+          {/* SUGGESTIONS */}
           {suggestions.length > 0 && (
             <div className="absolute w-[420px] bg-white border border-gray-200 mt-2 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
               {suggestions.map((m) => (
@@ -150,9 +156,7 @@ if (suggestions.length) {
                     className="w-10 h-14 object-cover rounded-md"
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {m.title}
-                    </p>
+                    <p className="text-sm font-medium text-gray-900">{m.title}</p>
                     <p className="text-xs text-gray-500">
                       {m.language} • {m.certificate}
                     </p>
@@ -183,7 +187,7 @@ if (suggestions.length) {
           ) : (
             <>
               <span className="text-sm text-gray-800 font-medium">
-                👋 Hi, {user.name || "User"}
+                Hi, {user.name || "User"}
               </span>
               <Link
                 to="/my"
@@ -206,11 +210,10 @@ if (suggestions.length) {
             </>
           )}
 
-          {/* MOBILE TOGGLE */}
+          {/* MOBILE MENU TOGGLE */}
           <button
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             onClick={() => setMobile((m) => !m)}
-            aria-label="Toggle menu"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
               {mobile ? (
@@ -246,7 +249,7 @@ if (suggestions.length) {
           ) : (
             <>
               <p className="text-sm text-gray-800 text-center font-medium">
-                👋 Hi, {user.name || "User"}
+                Hi, {user.name || "User"}
               </p>
               <Link
                 to="/my"
