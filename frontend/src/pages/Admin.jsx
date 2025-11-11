@@ -192,6 +192,34 @@ export default function Admin() {
     }
   }
 
+  // ---------- DELETE CINEMA ----------
+  async function deleteCinema(id) {
+    if (!window.confirm("Delete this cinema and all its screens & shows?")) return;
+    try {
+      await api.delete(`/api/admin/cinemas/${id}`, {
+        headers: { Authorization: "Bearer " + token },
+      });
+      alert("Cinema deleted!");
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to delete cinema");
+    }
+  }
+
+  // ---------- DELETE SCREEN ----------
+  async function deleteScreen(id) {
+    if (!window.confirm("Delete this screen and all its shows?")) return;
+    try {
+      await api.delete(`/api/screens/${id}`, {
+        headers: { Authorization: "Bearer " + token },
+      });
+      alert("Screen deleted!");
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to delete screen");
+    }
+  }
+
   // ---------- LOGOUT ----------
   function logout() {
     localStorage.removeItem("admin_token");
@@ -412,6 +440,55 @@ export default function Admin() {
                       </button>
                     </div>
                   ))
+                )}
+              </div>
+            </div>
+
+            {/* Existing Cinemas */}
+            <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-500 xl:col-span-2">
+              <h3 className="text-lg font-bold text-red-600 mb-3">Existing Cinemas ({cinemas.length})</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {cinemas.length === 0 ? (
+                  <p className="text-center text-gray-500 py-6">No cinemas added yet.</p>
+                ) : (
+                  cinemas.map(c => (
+                    <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:shadow transition">
+                      <div>
+                        <p className="font-medium text-sm">{c.name}</p>
+                        <p className="text-xs text-gray-500">{c.city} • {c.address || "—"}</p>
+                      </div>
+                      <button onClick={() => deleteCinema(c.id)} className="text-red-600 hover:text-red-800 text-xs font-medium">
+                        Delete
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Existing Screens */}
+            <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-500">
+              <h3 className="text-lg font-bold text-red-600 mb-3">Existing Screens ({screens.length})</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {screens.length === 0 ? (
+                  <p className="text-center text-gray-500 py-6">No screens added yet.</p>
+                ) : (
+                  screens.map(s => {
+                    const cinema = cinemas.find(c => c.id === s.cinema_id);
+                    return (
+                      <div key={s.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:shadow transition">
+                        <div>
+                          <p className="font-medium text-sm">{s.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {cinema?.name || "—"} • {s.rows}×{s.cols}
+                          </p>
+                        </div>
+                        <button onClick={() => deleteScreen(s.id)} className="text-red-600 hover:text-red-800 text-xs font-medium">
+                          Delete
+                        </button>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

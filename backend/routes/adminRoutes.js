@@ -168,4 +168,74 @@ router.delete("/movies/:id", authAdmin, (req, res) => {
   });
 });
 
+// ————————————————————————————————————————
+// NEW: DELETE CINEMA (cascade)
+// ————————————————————————————————————————
+router.delete("/cinemas/:id", authAdmin, (req, res) => {
+  const cinemaId = req.params.id;
+
+  db.serialize(() => {
+    // Get all screen IDs
+    db.all("SELECT id FROM screens WHERE cinema_id=?", [cinemaId], (err, screens) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const screenIds = screens.map(s => s.id);
+
+      if (screenIds.length > 0) {
+        const placeholders = screenIds.map(() => "?").join(",");
+        // Delete show_seats → bookings → shows → screens
+        db.run(`DELETE FROM show_seats WHERE show_id IN (SELECT id FROM shows WHERE screen_id IN (${placeholders}))`, screenIds);
+        db.run(`DELETE FROM bookings WHERE show_id IN (SELECT id FROM shows WHERE screen_id IN (${placeholders}))`, screenIds);
+        db.run(`DELETE FROM shows WHERE screen_id IN (${placeholders})`, screenIds);
+      }
+
+      // Delete screens
+      db.run("DELETE FROM screens WHERE cinema_id=?", [cinemaId], (err2) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+
+        // Finally delete cinema
+        db.run("DELETE FROM cinemas WHERE id=?", [cinemaId], function (err3) {
+          if (err3) return res.status(500).json({ error: err3.message });
+          if (this.changes === 0) return res.status(404).json({ error: "Cinema not found" });
+          res.json({ success: true });
+        });
+      });
+    });
+  });
+});
+
+// ————————————————————————————————————————
+// NEW: DELETE SCREEN (cascade)
+// ————————————————————————————————————————
+router.delete("/screens/:id", authAdmin, (req, res) => {
+  const screenId = req.params.id;
+
+  db.serialize(() => {
+    // Get all show IDs
+    db.all("SELECT id FROM shows WHERE screen_id=?", [screenId], (err, shows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const showIds = shows.map(s => s.id);
+
+      if (showIds.length > 0) {
+        const placeholders = showIds.map(() => "?").join(",");
+        db.run(`DELETE FROM show_seats WHERE show_id IN (${placeholders})`, showIds);
+        db.run(`DELETE FROM bookings WHERE show_id IN (${placeholders})`, showIds);
+      }
+
+      // Delete shows
+      db.run("DELETE FROM shows WHERE screen_id=?", [screenId], (err2) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+
+        // Delete screen
+        db.run("DELETE FROM screens WHERE id=?", [screenId], function (err3) {
+          if (err3) return res.status(500).json({ error: err3.message });
+          if (this.changes === 0) return res.status(404).json({ error: "Screen not found" });
+          res.json({ success: true });
+        });
+      });
+    });
+  });
+});
+
 module.exports = router;
