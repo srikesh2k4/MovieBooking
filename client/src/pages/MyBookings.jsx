@@ -12,7 +12,7 @@ export default function MyBookings() {
         return;
       }
       try {
-        const r = await api.get("/api/me/bookings", {
+        const r = await api.get("/api/my/bookings", {
           headers: { Authorization: "Bearer " + t },
         });
         setRows(r.data || []);
@@ -60,8 +60,8 @@ export default function MyBookings() {
                     <td className="p-3 font-mono text-gray-700 break-all">{x.id}</td>
                     <td className="p-3 text-gray-700">{x.show_id}</td>
                     <td className="p-3 text-gray-600">
-                      {JSON.parse(x.seats || "[]").join(", ")}
-                    </td>
+  {(x.seats || "").split(",").join(", ")}
+</td>
                     <td className="p-3 font-semibold text-gray-800">
                       ₹{x.amount}
                     </td>

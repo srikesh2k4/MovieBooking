@@ -30,12 +30,13 @@ export default function Admin() {
   // ---------- LOAD DATA ----------
   async function loadData(tok = token) {
     try {
-      const [m, c, s, b] = await Promise.all([
-        api.get("/api/movies"),
-        api.get("/api/cinemas"),
-        api.get("/api/screens"),
-        api.get("/api/banners"),
-      ]);
+const [m, c, s, b] = await Promise.all([
+  api.get("/api/movies", { headers: { Authorization: "Bearer " + tok } }),
+  api.get("/api/cinemas", { headers: { Authorization: "Bearer " + tok } }),
+  api.get("/api/screens", { headers: { Authorization: "Bearer " + tok } }),
+  api.get("/api/banners", { headers: { Authorization: "Bearer " + tok } }),
+]);
+
       setMovies(m.data || []);
       setCinemas(c.data || []);
       setScreens(s.data || []);

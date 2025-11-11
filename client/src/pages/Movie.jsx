@@ -37,7 +37,7 @@ export default function Movie() {
 
   async function openShow(sid) {
     try {
-      const r = await api.get("/api/show/" + sid);
+      const r = await api.get("/api/shows/" + sid);
       setMeta(r.data);
       setSeats(r.data.seats || []);
       setSelected([]);

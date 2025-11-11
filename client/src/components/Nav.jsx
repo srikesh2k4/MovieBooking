@@ -1,13 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api, setAuth } from "../api";
 
 export default function Nav() {
   const [user, setUser] = useState(null);
   const [mobile, setMobile] = useState(false);
+  const [query, setQuery] = useState("");
+  const [allMovies, setAllMovies] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const searchRef = useRef(null);
   const navigate = useNavigate();
 
-  // --- Fetch user dynamically based on token ---
+  // --- Fetch user ---
   async function fetchUser() {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -16,23 +20,15 @@ export default function Nav() {
       return;
     }
     setAuth(token);
-
     try {
-      // Call backend user info endpoint
       const r = await api.get("/api/me");
-      if (r.data && r.data.name) {
-        setUser(r.data);
-      } else {
-        setUser(null);
-      }
-    } catch (err) {
-      console.warn("Failed to load user:", err);
+      setUser(r.data?.name ? r.data : null);
+    } catch {
       setUser(null);
       localStorage.removeItem("token");
     }
   }
 
-  // --- Initialize user & watch storage changes ---
   useEffect(() => {
     fetchUser();
     const onStorage = () => fetchUser();
@@ -40,7 +36,54 @@ export default function Nav() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // --- Logout ---
+  // --- Load all movies once ---
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get("/api/movies");
+        setAllMovies(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setAllMovies([]);
+      }
+    })();
+  }, []);
+
+  // --- Update suggestions live ---
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    const q = query.toLowerCase();
+    const filtered = allMovies.filter((m) =>
+      (m.title || "").toLowerCase().includes(q)
+    );
+    setSuggestions(filtered.slice(0, 6)); // show top 6 matches
+  }, [query, allMovies]);
+
+  // --- Handle outside click to close suggestions ---
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSuggestions([]);
+      }
+    }
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // --- Search submit / enter ---
+  function doSearch() {
+    if (suggestions.length === 1) {
+      navigate(`/movie/${suggestions[0].id}`);
+    } else if (suggestions.length > 1) {
+      // optional: you could navigate to a search results page
+      alert(`Found ${suggestions.length} similar movies!`);
+    } else {
+      alert("No matching movie found.");
+    }
+  }
+
   function logout() {
     localStorage.removeItem("token");
     setAuth(null);
@@ -51,31 +94,73 @@ export default function Nav() {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto h-[64px] px-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto h-[64px] px-4 flex items-center justify-between relative">
         {/* LOGO */}
         <Link to="/" className="flex items-center gap-2">
           <img
-  src="https://pnghdpro.com/wp-content/themes/pnghdpro/download/social-media-and-brands/bookmyshow-logo-hd.png"
-  alt="BookMyShow"
-  className="w-28 md:w-32"
-/>
-
+            src="https://pnghdpro.com/wp-content/themes/pnghdpro/download/social-media-and-brands/bookmyshow-logo-hd.png"
+            alt="BookMyShow"
+            className="w-28 md:w-32"
+          />
         </Link>
 
         {/* DESKTOP SEARCH */}
-        <div className="hidden md:block">
-          <div className="w-[420px] flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-red-600">
-            <svg width="18" height="18" viewBox="0 0 24 24" className="text-gray-500">
+        <div className="hidden md:block relative" ref={searchRef}>
+          <div className="w-[420px] flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-red-600 relative">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              className="text-gray-500 cursor-pointer"
+              onClick={doSearch}
+            >
               <path
                 fill="currentColor"
-                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79l5 5l1.5-1.5l-5-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5S14 7.01 14 9.5S11.99 14 9.5 14"
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 
+                6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79l5 
+                5l1.5-1.5l-5-5zm-6 0C7.01 14 5 11.99 5 
+                9.5S7.01 5 9.5 5S14 7.01 14 9.5S11.99 14 9.5 14"
               />
             </svg>
             <input
               placeholder="Search for Movies, Events, Plays, Sports and Activities"
               className="w-full outline-none text-sm bg-transparent text-gray-900 placeholder:text-gray-500"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && doSearch()}
             />
           </div>
+
+          {/* Suggestions Dropdown */}
+          {suggestions.length > 0 && (
+            <div className="absolute w-[420px] bg-white border border-gray-200 mt-2 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+              {suggestions.map((m) => (
+                <div
+                  key={m.id}
+                  onClick={() => {
+                    navigate(`/movie/${m.id}`);
+                    setQuery("");
+                    setSuggestions([]);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100 transition"
+                >
+                  <img
+                    src={m.poster || "https://picsum.photos/60/90"}
+                    alt={m.title}
+                    className="w-10 h-14 object-cover rounded-md"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {m.title}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {m.language} • {m.certificate}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* AUTH BUTTONS */}
