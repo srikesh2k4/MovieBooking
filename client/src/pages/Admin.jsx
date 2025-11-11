@@ -185,6 +185,20 @@ const [m, c, s, b] = await Promise.all([
       alert(err.response?.data?.error || "Delete failed");
     }
   }
+  // ---------- DELETE MOVIE ----------
+async function deleteMovie(id) {
+  if (!window.confirm("Are you sure you want to delete this movie?")) return;
+  try {
+    await api.delete(`/api/admin/movies/${id}`, {
+      headers: { Authorization: "Bearer " + token },
+    });
+    alert("🎬 Movie deleted successfully!");
+    loadData();
+  } catch (err) {
+    alert(err.response?.data?.error || "Failed to delete movie");
+  }
+}
+
 
   // ---------- LOGOUT ----------
   function logout() {
@@ -503,6 +517,41 @@ const [m, c, s, b] = await Promise.all([
                 Upload Banner
               </button>
             </form>
+                  {/* 🎬 Existing Movies */}
+<div className="bg-white p-6 rounded-xl shadow-md border border-neutral-200">
+  <h3 className="text-lg font-semibold text-black mb-2">
+    🎬 Existing Movies
+  </h3>
+  <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+    {movies.length === 0 && (
+      <div className="text-sm text-gray-500">No movies yet.</div>
+    )}
+    {movies.map((m) => (
+      <div
+        key={m.id}
+        className="border rounded-lg overflow-hidden bg-neutral-50"
+      >
+        <img
+          src={m.poster || "https://via.placeholder.com/300x400?text=No+Poster"}
+          alt={m.title}
+          className="w-full h-40 object-cover"
+        />
+        <div className="p-3 text-sm">
+          <p className="font-semibold truncate">{m.title}</p>
+          <p className="text-gray-500 text-xs truncate">
+            {m.language || "Unknown"} • {m.certificate || "U/A"}
+          </p>
+          <button
+            onClick={() => deleteMovie(m.id)}
+            className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-1.5 rounded-md text-xs transition-all"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
 
             {/* 🗑️ Delete Banners */}
             <div className="bg-white p-6 rounded-xl shadow-md border border-neutral-200">

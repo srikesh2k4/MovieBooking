@@ -426,6 +426,46 @@ app.get("/api/my/bookings", authUser, (req, res) => {
   );
 });
 
+// ✅ DELETE MOVIE (Admin Only)
+// ✅ DELETE MOVIE (with dependencies)
+app.delete("/api/admin/movies/:id", authAdmin, (req, res) => {
+  const movieId = req.params.id;
+
+  db.serialize(() => {
+    // 1️⃣ Delete dependent banners
+    db.run("DELETE FROM banners WHERE movie_id=?", [movieId]);
+
+    // 2️⃣ Delete dependent bookings
+    db.run("DELETE FROM bookings WHERE movie_id=?", [movieId]);
+
+    // 3️⃣ Delete dependent shows
+    db.run("DELETE FROM shows WHERE movie_id=?", [movieId]);
+
+    // 4️⃣ Delete movie poster file if exists
+    db.get("SELECT poster FROM movies WHERE id=?", [movieId], (err, row) => {
+      if (row && row.poster) {
+        try {
+          const posterPath = path.join(
+            __dirname,
+            row.poster.replace(/^\/public\//, "public/")
+          );
+          if (fs.existsSync(posterPath)) fs.unlinkSync(posterPath);
+        } catch {}
+      }
+    });
+
+    // 5️⃣ Finally delete the movie itself
+    db.run("DELETE FROM movies WHERE id=?", [movieId], function (err2) {
+      if (err2) return res.status(500).json({ error: err2.message });
+      if (this.changes === 0)
+        return res.status(404).json({ error: "Movie not found" });
+      res.json({ success: true });
+    });
+  });
+});
+
+
+
 // --- BANNERS + CINEMAS ---
 app.get("/api/banners", (_req, res) => {
   db.all(`SELECT b.*, m.title AS movie_title FROM banners b LEFT JOIN movies m ON b.movie_id=m.id ORDER BY b.rowid DESC`, [], (_e, rows) => res.json(rows || []));
